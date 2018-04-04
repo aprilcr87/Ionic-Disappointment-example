@@ -1,35 +1,42 @@
+import { TestBed, inject } from '@angular/core/testing';
+import { HttpEvent, HttpEventType } from '@angular/common/http';
+
+import {HttpClientTestingModule, HttpTestingController} from '@angular/common/http/testing';
 import { MagicBall } from './magic-ball';
  
-let magicBall = null;
- 
-describe('Magic 8 Ball Service', () => {
- 
+describe('MagicBall', () => {
     beforeEach(() => {
-      magicBall = new MagicBall();
+      TestBed.configureTestingModule({
+        imports: [HttpClientTestingModule],
+        providers: [MagicBall]
+      });
     });
- 
-    it('should return a non empty array', () => {
- 
-            let result = magicBall.getAnswers();
- 
-            expect(Array.isArray(result)).toBeTruthy;
-            expect(result.length).toBeGreaterThan(0);
+   
+    it(
+      'should get users',
+      inject(
+        [HttpTestingController, MagicBall],
+        (httpMock: HttpTestingController, dataService: MagicBall) => {
+          const mockUsers = [
+            { name: 'Bob', website: 'www.yessss.com' },
+            { name: 'Juliette', website: 'nope.com' }
+          ];
+   
+          dataService.getData().subscribe((event: HttpEvent<any>) => {
+            switch (event.type) {
+              case HttpEventType.Response:
+                expect(event.body).toEqual(mockUsers);
+            }
+          });
+   
+          const mockReq = httpMock.expectOne(dataService.url);
+   
+          expect(mockReq.cancelled).toBeFalsy();
+          expect(mockReq.request.responseType).toEqual('json');
+          mockReq.flush(mockUsers);
+   
+          httpMock.verify();
         }
+      )
     );
- 
-    it('should return one random answer as a string', () => {
-            expect(typeof magicBall.getRandomAnswer()).toBe('string');
-        }
-    );
- 
-    it('should have both yes and no available in result set', () => {
- 
-            let result = magicBall.getAnswers();
- 
-            expect(result).toContain('Yes');
-            expect(result).toContain('No');
- 
-        }
-    );
- 
-});
+   });
